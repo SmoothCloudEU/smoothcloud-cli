@@ -18,14 +18,17 @@ func main() {
 		Use:   "info",
 		Short: "Gets information about the cli",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("CLI-INFOS")
+			command.Info()
 		},
 	}
 	var installCommand = &cobra.Command{
-		Use:   "install",
+		Use:   "install <directory>",
 		Short: "Installs the cloud into a directory",
+		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			command.Install()
+			var directory *string = &args[0]
+			var dir = *directory
+			command.Install(dir)
 		},
 	}
 
