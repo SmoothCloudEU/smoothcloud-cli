@@ -1,4 +1,4 @@
-module smoothcloud-cli
+module smoothcloudcli
 
 go 1.23.3
 
