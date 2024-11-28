@@ -29,10 +29,8 @@ func main() {
 			command.Install()
 		},
 	}
-
 	rootCommand.AddCommand(infoCommand)
 	rootCommand.AddCommand(installCommand)
-
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
