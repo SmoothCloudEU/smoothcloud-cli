@@ -24,7 +24,7 @@ func main() {
 	var installCommand = &cobra.Command{
 		Use:   "install",
 		Short: "Will install the cloud",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
 			command.Install()
 		},
