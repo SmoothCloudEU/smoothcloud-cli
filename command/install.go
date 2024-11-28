@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"smoothcloudcli/json"
 	"strconv"
+	"strings"
 
 	"github.com/manifoldco/promptui"
 )
@@ -92,6 +93,10 @@ func getDirectoriesFromCurrentPath() []string {
 			return err
 		}
 		if info.IsDir() && path != currentDir {
+			dirName := filepath.Base(path)
+			if strings.HasPrefix(dirName, ".") {
+				return nil
+			}
 			dirs = append(dirs, path)
 		}
 		return nil
