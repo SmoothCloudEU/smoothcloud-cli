@@ -1,8 +1,10 @@
 package command
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func Install(directory string) {
@@ -22,5 +24,19 @@ func Install(directory string) {
 			return
 		}
 	}
-	fmt.Printf("Cloud has been successfully installed into %s!\n", directory)
+	host := strings.TrimSpace(Input("Which IPv4-adresse should use the cloud?"))
+	port := strings.TrimSpace(Input("Which port should use the cloud?"))
+	memory := strings.TrimSpace(Input("What is the maximum amount of storage the cloud should use?"))
+	fmt.Printf("Cloud has been successfully installed into %s with Host %s:%s!\nMemory: %s", directory, host, port, memory)
+}
+
+func Input(question string) string {
+	fmt.Printf("\n%s\n", question)
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("Error while read input:", err)
+		return ""
+	}
+	return input
 }
