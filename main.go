@@ -22,13 +22,11 @@ func main() {
 		},
 	}
 	var installCommand = &cobra.Command{
-		Use:   "install <directory>",
-		Short: "Installs the cloud into a directory",
+		Use:   "install",
+		Short: "Will install the cloud",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			var directory *string = &args[0]
-			var dir = *directory
-			command.Install(dir)
+			command.Install()
 		},
 	}
 
