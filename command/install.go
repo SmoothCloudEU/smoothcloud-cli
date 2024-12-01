@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"smoothcloudcli/json"
 	"strconv"
-	"strings"
 
 	"github.com/manifoldco/promptui"
 )
@@ -28,88 +27,115 @@ type Config struct {
 }
 
 func Install() {
-	fmt.Printf("Installing cloud...\n\n")
-	existingDirs := getDirectoriesFromCurrentPath()
-	selectedDir := SelectDirectory("Select a directory for the cloud installation:", existingDirs)
+	fmt.Println("Installing cloud...\n")
+
+	// Verzeichnisauswahl mit Navigationsfunktion
+	selectedDir := browseDirectories(".")
 	if selectedDir == "" {
 		fmt.Println("Installation aborted.")
 		return
 	}
+
+	// Basisverzeichnis und Unterverzeichnisse erstellen
 	err := os.MkdirAll(selectedDir, os.ModePerm)
 	if err != nil {
 		fmt.Printf("Error creating directory %s: %v\n", selectedDir, err)
 		return
 	}
+
 	directories := []string{DirGroups, DirProxies, DirLobbies, DirServers, DirStorage, DirTemplates}
-	for _, value := range directories {
-		dir := selectedDir + value
-		err = os.MkdirAll(dir, os.ModePerm)
+	for _, dir := range directories {
+		path := filepath.Join(selectedDir, dir)
+		err := os.MkdirAll(path, os.ModePerm)
 		if err != nil {
-			fmt.Printf("Error creating directory %s: %v\n", dir, err)
+			fmt.Printf("Error creating directory %s: %v\n", path, err)
 			return
 		}
 	}
+
+	// Konfiguration einlesen
 	language := InputWithSelect("Which language do you want to use for the cloud?", []string{"en_US", "de_DE"})
 	host := Input("Which IPv4 address should the cloud use?", "10.0.0.11")
 	port := promptPort()
 	memory := promptMemory()
+
 	config := Config{
 		Language: language,
 		Host:     host,
 		Port:     port,
 		Memory:   memory,
 	}
-	configPath := selectedDir + "/config.json"
+
+	configPath := filepath.Join(selectedDir, "config.json")
 	err = json.SaveJSON(configPath, config)
 	if err != nil {
 		fmt.Printf("Error saving configuration to %s: %v\n", configPath, err)
 		return
 	}
+
 	fmt.Printf("\nCloud has been successfully installed into \"%s\"!\n", selectedDir)
 }
 
-func SelectDirectory(question string, directories []string) string {
-	prompt := promptui.Select{
-		Label: question,
-		Items: directories,
+// Verzeichnis-Navigation mit Optionen zum Wechseln und Zurückgehen
+func browseDirectories(baseDir string) string {
+	currentDir := baseDir
+
+	for {
+		// Liste der Verzeichnisse im aktuellen Verzeichnis abrufen
+		dirs, err := getSubdirectories(currentDir)
+		if err != nil {
+			fmt.Printf("Error reading directories: %v\n", err)
+			return ""
+		}
+
+		// Option zum Zurückgehen hinzufügen, wenn nicht im Basisverzeichnis
+		if currentDir != baseDir {
+			dirs = append([]string{".."}, dirs...)
+		}
+
+		// Option zum Verlassen hinzufügen
+		dirs = append(dirs, "Select this directory")
+
+		// Benutzeraufforderung
+		prompt := promptui.Select{
+			Label: fmt.Sprintf("Current directory: %s\nNavigate or select:", currentDir),
+			Items: dirs,
+		}
+		_, result, err := prompt.Run()
+		if err != nil {
+			fmt.Printf("Error selecting directory: %v\n", err)
+			return ""
+		}
+
+		// Verzeichnis auswählen
+		if result == "Select this directory" {
+			return currentDir
+		}
+
+		// Zurück ins übergeordnete Verzeichnis
+		if result == ".." {
+			currentDir = filepath.Dir(currentDir)
+			continue
+		}
+
+		// In das gewählte Unterverzeichnis wechseln
+		currentDir = filepath.Join(currentDir, result)
 	}
-	_, result, err := prompt.Run()
-	if err != nil {
-		fmt.Printf("Error selecting directory: %v\n", err)
-		return ""
-	}
-	return result
 }
 
-func getDirectoriesFromCurrentPath() []string {
-	currentDir, err := os.Getwd()
+func getSubdirectories(path string) ([]string, error) {
+	entries, err := os.ReadDir(path)
 	if err != nil {
-		fmt.Println("Error getting current working directory:", err)
-		return nil
+		return nil, err
 	}
+
 	var dirs []string
-	err = filepath.Walk(currentDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+	for _, entry := range entries {
+		if entry.IsDir() {
+			dirs = append(dirs, entry.Name())
 		}
-		if info.IsDir() && path != currentDir {
-			dirName := filepath.Base(path)
-			if strings.HasPrefix(dirName, ".") {
-				return nil
-			}
-			dirs = append(dirs, path)
-		}
-		return nil
-	})
-	if err != nil {
-		fmt.Println("Error reading directories:", err)
-		return nil
 	}
-	if len(dirs) == 0 {
-		fmt.Println("No directories found.")
-		return nil
-	}
-	return dirs
+	return dirs, nil
 }
 
 func Input(question string, defaultValue string) string {
@@ -179,7 +205,7 @@ func validateMemory(input string) error {
 	}
 	_, err := strconv.Atoi(input)
 	if err != nil {
-		return fmt.Errorf("invalid memory value. please enter a valid number")
+		return fmt.Errorf("invalid memory value. Please enter a valid number")
 	}
 	return nil
 }
