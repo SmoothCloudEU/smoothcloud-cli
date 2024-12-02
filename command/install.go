@@ -26,23 +26,42 @@ type Config struct {
 	Memory   int    `json:"memory"`
 }
 
-func Install() {
-	fmt.Println("Installing cloud...\n")
+type SQLiteDatabaseConfig struct {
+	Filename string `json:"filename"`
+	Prefix 	 string `json:"prefix"`
+}
 
-	// Verzeichnisauswahl mit Navigationsfunktion
+type MariaDBDatabaseConfig struct {
+	Host 	 string `json:"host"`
+	Port 	 int 	`json:"port"`
+	Database string	`json:"database"`
+	Username string	`json:"username"`
+	Password string	`json:"password"`
+	Prefix 	 string `json:"prefix"`
+}
+
+type MongoDBDatabaseConfig struct {
+	Host 	 string `json:"host"`
+	Port 	 int 	`json:"port"`
+	Database string	`json:"database"`
+	Username string	`json:"username"`
+	Password string	`json:"password"`
+	Prefix 	 string `json:"prefix"`
+}
+
+func Install() {
+	fmt.Println("Installing cloud...")
+	fmt.Println(" ")
 	selectedDir := browseDirectories(".")
 	if selectedDir == "" {
 		fmt.Println("Installation aborted.")
 		return
 	}
-
-	// Basisverzeichnis und Unterverzeichnisse erstellen
 	err := os.MkdirAll(selectedDir, os.ModePerm)
 	if err != nil {
 		fmt.Printf("Error creating directory %s: %v\n", selectedDir, err)
 		return
 	}
-
 	directories := []string{DirGroups, DirProxies, DirLobbies, DirServers, DirStorage, DirTemplates}
 	for _, dir := range directories {
 		path := filepath.Join(selectedDir, dir)
@@ -52,51 +71,71 @@ func Install() {
 			return
 		}
 	}
-
-	// Konfiguration einlesen
-	language := InputWithSelect("Which language do you want to use for the cloud?", []string{"en_US", "de_DE"})
-	host := Input("Which IPv4 address should the cloud use?", "10.0.0.11")
+	databaseType := InputWithSelect("Which database type do you want to use for the cloud?", []string{"SQLITE", "MARIADB", "MONGODB"})
+	var databaseConfig interface{}
+	switch databaseType {
+	case "MARIADB":
+		databaseConfig = MariaDBDatabaseConfig{
+			Host: Input("Enter the host of your database server", "127.0.0.1"),
+			Port: promptDatabasePort("3306"),
+			Database: Input("Enter the database which you want to use", "smoothcloud"),
+			Username: Input("Enter the username of your database user", ""),
+			Password: Input("Enter the password of your database user", ""),
+			Prefix: "smoothcloud_",
+		}
+	case "MONGODB":
+		databaseConfig = MongoDBDatabaseConfig{
+			Host: Input("Enter the host of your database server", "127.0.0.1"),
+			Port: promptDatabasePort("3306"),
+			Database: Input("Enter the database which you want to use", "smoothcloud"),
+			Username: Input("Enter the username of your database user", ""),
+			Password: Input("Enter the password of your database user", ""),
+			Prefix: "smoothcloud_",
+		}
+	default:
+		databaseConfig = SQLiteDatabaseConfig{
+			Filename: "sqlite.db",
+			Prefix: "smoothcloud_",
+		}
+	}
+	language := InputWithSelect("Enter the language for the cloud", []string{"en_US", "de_DE"})
+	host := Input("Enter a IPv4 address which the cloud should use", "127.0.0.1")
 	port := promptPort()
 	memory := promptMemory()
-
 	config := Config{
 		Language: language,
 		Host:     host,
 		Port:     port,
 		Memory:   memory,
 	}
-
 	configPath := filepath.Join(selectedDir, "config.json")
 	err = json.SaveJSON(configPath, config)
 	if err != nil {
 		fmt.Printf("Error saving configuration to %s: %v\n", configPath, err)
 		return
 	}
-
+	databaseConfigPath := filepath.Join(selectedDir, "/storage", "database.json")
+	err = json.SaveJSON(databaseConfigPath, databaseConfig)
+	if err != nil {
+		fmt.Printf("Error saving configuration to %s: %v\n", configPath, err)
+		return
+	}
 	fmt.Printf("\nCloud has been successfully installed into \"%s\"!\n", selectedDir)
 }
 
-// Verzeichnis-Navigation mit Optionen zum Wechseln und Zurückgehen
 func browseDirectories(baseDir string) string {
 	currentDir := baseDir
-
 	for {
-		// Liste der Verzeichnisse im aktuellen Verzeichnis abrufen
 		dirs, err := getSubdirectories(currentDir)
 		if err != nil {
 			fmt.Printf("Error reading directories: %v\n", err)
 			return ""
 		}
-
-		// Option zum Zurückgehen hinzufügen, wenn nicht im Basisverzeichnis
 		if currentDir != baseDir {
 			dirs = append([]string{".."}, dirs...)
 		}
-
-		// Option zum Verlassen hinzufügen
 		dirs = append(dirs, "Select this directory")
-
-		// Benutzeraufforderung
+		dirs = append(dirs, "Create a directory")
 		prompt := promptui.Select{
 			Label: fmt.Sprintf("Current directory: %s\nNavigate or select:", currentDir),
 			Items: dirs,
@@ -106,19 +145,28 @@ func browseDirectories(baseDir string) string {
 			fmt.Printf("Error selecting directory: %v\n", err)
 			return ""
 		}
-
-		// Verzeichnis auswählen
 		if result == "Select this directory" {
 			return currentDir
 		}
-
-		// Zurück ins übergeordnete Verzeichnis
+		if result == "Create a directory" {
+			prompt := promptui.Prompt{
+				Label: 	   "Name of the new directory",
+				Default:   "cloud/",
+				AllowEdit: false,
+				Validate:  validateNonEmpty,
+			}
+			result, err := prompt.Run()
+			if err != nil {
+				fmt.Printf("Error creating directory: %v\n", err)
+				return ""
+			}
+			os.MkdirAll(result, os.ModePerm)
+			return browseDirectories(result)
+		}
 		if result == ".." {
 			currentDir = filepath.Dir(currentDir)
 			continue
 		}
-
-		// In das gewählte Unterverzeichnis wechseln
 		currentDir = filepath.Join(currentDir, result)
 	}
 }
@@ -142,7 +190,7 @@ func Input(question string, defaultValue string) string {
 	prompt := promptui.Prompt{
 		Label:     question,
 		Default:   defaultValue,
-		AllowEdit: true,
+		AllowEdit: false,
 		Validate:  validateNonEmpty,
 	}
 	result, err := prompt.Run()
@@ -166,9 +214,21 @@ func InputWithSelect(question string, options []string) string {
 	return result
 }
 
+func promptDatabasePort(suggestion string) int {
+	for {
+		portStr := Input("Enter the port of your database server", suggestion)
+		port, err := strconv.Atoi(portStr)
+		if err != nil || port <= 0 || port > 65535 {
+			fmt.Println("Invalid port number. Please enter a valid port (1-65535).")
+			continue
+		}
+		return port
+	}
+}
+
 func promptPort() int {
 	for {
-		portStr := Input("Which port should the cloud use?", "8080")
+		portStr := Input("Which port should the cloud use?", "6042")
 		port, err := strconv.Atoi(portStr)
 		if err != nil || port <= 0 || port > 65535 {
 			fmt.Println("Invalid port number. Please enter a valid port (1-65535).")
