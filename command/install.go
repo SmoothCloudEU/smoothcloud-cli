@@ -19,36 +19,6 @@ const (
 	DirTemplates = "/templates"
 )
 
-type Config struct {
-	Language string `json:"language"`
-	Host     string `json:"host"`
-	Port     int    `json:"port"`
-	Memory   int    `json:"memory"`
-}
-
-type SQLiteDatabaseConfig struct {
-	Filename string `json:"filename"`
-	Prefix 	 string `json:"prefix"`
-}
-
-type MariaDBDatabaseConfig struct {
-	Host 	 string `json:"host"`
-	Port 	 int 	`json:"port"`
-	Database string	`json:"database"`
-	Username string	`json:"username"`
-	Password string	`json:"password"`
-	Prefix 	 string `json:"prefix"`
-}
-
-type MongoDBDatabaseConfig struct {
-	Host 	 string `json:"host"`
-	Port 	 int 	`json:"port"`
-	Database string	`json:"database"`
-	Username string	`json:"username"`
-	Password string	`json:"password"`
-	Prefix 	 string `json:"prefix"`
-}
-
 func Install() {
 	fmt.Println("Installing cloud...")
 	fmt.Println(" ")
@@ -61,6 +31,22 @@ func Install() {
 	if err != nil {
 		fmt.Printf("Error creating directory %s: %v\n", selectedDir, err)
 		return
+	}
+	userDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Printf("Error opening userhomedir: %v\n", err)
+		return
+	}
+	smoothcloudDir := filepath.Join(userDir, ".smoothcloud")
+	err = os.MkdirAll(smoothcloudDir, os.ModePerm)
+	if err != nil {
+		fmt.Printf("Error creating directory %s: %v\n", selectedDir, err)
+		return
+	}
+	fmt.Println(smoothcloudDir)
+	err = json.SaveJSON(smoothcloudDir + "/config.json", json.MainConfig{WorkingDirectory: selectedDir})
+	if err != nil {
+		fmt.Printf("Error saving global config: %v\n", err)
 	}
 	directories := []string{DirGroups, DirProxies, DirLobbies, DirServers, DirStorage, DirTemplates}
 	for _, dir := range directories {
@@ -75,7 +61,7 @@ func Install() {
 	var databaseConfig interface{}
 	switch databaseType {
 	case "MARIADB":
-		databaseConfig = MariaDBDatabaseConfig{
+		databaseConfig = json.MariaDBDatabaseConfig{
 			Host: Input("Enter the host of your database server", "127.0.0.1"),
 			Port: promptDatabasePort("3306"),
 			Database: Input("Enter the database which you want to use", "smoothcloud"),
@@ -84,7 +70,7 @@ func Install() {
 			Prefix: "smoothcloud_",
 		}
 	case "MONGODB":
-		databaseConfig = MongoDBDatabaseConfig{
+		databaseConfig = json.MongoDBDatabaseConfig{
 			Host: Input("Enter the host of your database server", "127.0.0.1"),
 			Port: promptDatabasePort("3306"),
 			Database: Input("Enter the database which you want to use", "smoothcloud"),
@@ -93,7 +79,7 @@ func Install() {
 			Prefix: "smoothcloud_",
 		}
 	default:
-		databaseConfig = SQLiteDatabaseConfig{
+		databaseConfig = json.SQLiteDatabaseConfig{
 			Filename: "sqlite.db",
 			Prefix: "smoothcloud_",
 		}
@@ -102,7 +88,7 @@ func Install() {
 	host := Input("Enter a IPv4 address which the cloud should use", "127.0.0.1")
 	port := promptPort()
 	memory := promptMemory()
-	config := Config{
+	config := json.Config{
 		Language: language,
 		Host:     host,
 		Port:     port,
