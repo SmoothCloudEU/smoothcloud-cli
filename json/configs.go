@@ -33,3 +33,20 @@ type MongoDBDatabaseConfig struct {
 	Password string	`json:"password"`
 	Prefix 	 string `json:"prefix"`
 }
+
+type GroupConfig struct {
+	StartPriority	 	 int	`json:"startPriority"`
+	Name 			 	 string `json:"name"`
+	TemplateName	 	 string `json:"templateName"`
+	Static				 bool	`json:"static"`
+	Maintenance			 bool	`json:"maintenance"`
+	Permission			 string `json:"permission"`
+	MinMemory 	 	 	 int 	`json:"minMemory"`
+	MaxMemory 	 	 	 int 	`json:"maxMemory"`
+	MinOnlineServices	 int	`json:"minOnlineServices"`
+	MaxOnlineServices	 int	`json:"maxOnlineServices"`
+	MaxPlayers 	 	 	 int 	`json:"maxPlayers"`
+	NewServiceProcent	 int 	`json:"newServiceProcent"`
+	ServiceVersion	 	 string `json:"serviceVersion"`
+	Java		 	 	 string `json:"java"`
+}
