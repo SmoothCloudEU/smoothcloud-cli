@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"smoothcloudcli/json"
 	"smoothcloudcli/prompt"
+	"strings"
 )
 
 func CreateGroup() {
@@ -26,6 +27,7 @@ func CreateGroup() {
 	groupType := prompt.InputWithSelect("Type of the group", []string{"Proxy", "Lobby", "Server"})
 	name := prompt.Input("Name of the group", "")
 	templateName := prompt.InputWithSelect("Which template do you want to use?", []string{"create"})
+	startPriority := prompt.InputInteger("Which start priority should have services of this group?", "")
 	static := prompt.InputWithSelect("Should the group start static services?", []string{"yes", "no"})
 	maintenance := prompt.InputWithSelect("Should the group start services automatically in maintenance mode?", []string{"yes", "no"})
 	permission := prompt.InputWithEmpty("Which permission is needed to join services of this group? (Leave empty for no permission)", "")
@@ -69,6 +71,7 @@ func CreateGroup() {
 			}
 			return templateName
 		}(),
+		StartPriority: startPriority,
 		Static: staticBool,
 		Maintenance: maintenanceBool,
 		Permission: func() any {
@@ -106,9 +109,11 @@ func CreateGroup() {
 func ExtractServiceVersions(config json.ServiceVersion) ([]string, []string) {
 	var serviceVersions []string
 	var proxyVersions []string
-	for version := range config.SERVER.PAPER.Versions {
-		serviceVersion := fmt.Sprintf("PAPER_%s", version)
-		serviceVersions = append(serviceVersions, serviceVersion)
+	for serverType, serverConfig := range config.SERVER {
+		for version := range serverConfig.Versions {
+			serviceVersion := fmt.Sprintf("%s_%s", strings.ToUpper(serverType), version)
+			serviceVersions = append(serviceVersions, serviceVersion)
+		}
 	}
 	if config.PROXY.VELOCITY != nil {
 		for version := range config.PROXY.VELOCITY {
