@@ -35,9 +35,9 @@ type MongoDBDatabaseConfig struct {
 }
 
 type GroupConfig struct {
-	StartPriority	 	 int	`json:"startPriority"`
 	Name 			 	 string `json:"name"`
 	TemplateName	 	 string `json:"templateName"`
+	StartPriority	 	 int	`json:"startPriority"`
 	Static				 bool	`json:"static"`
 	Maintenance			 bool	`json:"maintenance"`
 	Permission			 any	`json:"permission"`
@@ -56,13 +56,11 @@ type ServiceVersionProxy struct {
 	BUNGEECORD map[string]string `json:"BUNGEECORD"`
 }
 
-type ServiceVersionServer struct {
-	PAPER struct {
-		Versions map[string]map[string]string `json:"versions"`
-	} `json:"PAPER"`
+type ServiceVersion struct {
+	PROXY  ServiceVersionProxy  	`json:"PROXY"`
+	SERVER map[string]VersionConfig `json:"SERVER"`
 }
 
-type ServiceVersion struct {
-	PROXY  ServiceVersionProxy  `json:"PROXY"`
-	SERVER ServiceVersionServer `json:"SERVER"`
+type VersionConfig struct {
+	Versions map[string]interface{} `json:"versions"`
 }
