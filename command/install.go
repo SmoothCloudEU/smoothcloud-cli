@@ -12,7 +12,7 @@ const (
 	DirGroups    = "/groups"
 	DirProxies   = "/groups/proxies"
 	DirLobbies   = "/groups/lobbies"
-	DirServers   = "/groups/servers"
+	DirServers   = "/groups/server"
 	DirStorage   = "/storage"
 	DirTemplates = "/templates"
 )
