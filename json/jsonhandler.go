@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func SaveJSON(filePath string, data interface{}) error {
@@ -26,7 +27,6 @@ func SaveJSON(filePath string, data interface{}) error {
 }
 
 func LoadJSON(filePath string, result interface{}) error {
-	fmt.Println(filePath)
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("error while opening file: %w", err)
@@ -44,27 +44,18 @@ func LoadJSON(filePath string, result interface{}) error {
 }
 
 func LoadJSONFromURL(url string, result interface{}) error {
-	fmt.Println(url)
-	
-	// HTTP-GET-Anfrage ausführen
 	resp, err := http.Get(url)
 	if err != nil {
 		return fmt.Errorf("error while fetching URL: %w", err)
 	}
 	defer resp.Body.Close()
-
-	// Überprüfen, ob der HTTP-Statuscode erfolgreich ist
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("received non-OK HTTP status: %s", resp.Status)
 	}
-
-	// Inhalt der Antwort lesen
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("error while reading response body: %w", err)
 	}
-
-	// JSON-Daten unmarshallen
 	err = json.Unmarshal(body, result)
 	if err != nil {
 		return fmt.Errorf("error while parsing JSON: %w", err)
@@ -83,6 +74,49 @@ func AddKeyValue(filePath string, key string, value interface{}) error {
 	}
 	data[key] = value
 	return SaveJSON(filePath, data)
+}
+
+func AddNestedKeyValue(filePath string, keyPath string, value interface{}) error {
+    var data map[string]interface{}
+    err := LoadJSON(filePath, &data)
+    if err != nil && os.IsNotExist(err) {
+        data = make(map[string]interface{})
+    } else if err != nil {
+        return fmt.Errorf("error while reading file: %w", err)
+    }
+
+    // Schlüsselpfad in eine verschachtelte Struktur einfügen
+    if err := setNestedKey(data, keyPath, value); err != nil {
+        return fmt.Errorf("error while setting nested key: %w", err)
+    }
+
+    return SaveJSON(filePath, data)
+}
+
+func setNestedKey(data map[string]interface{}, keyPath string, value interface{}) error {
+    keys := strings.Split(keyPath, ".") // Schlüssel in einzelne Teile zerlegen
+    current := data
+
+    for i, key := range keys {
+        if i == len(keys)-1 {
+            // Letzter Schlüssel -> Wert setzen
+            current[key] = value
+        } else {
+            // Schlüssel existiert nicht -> neue Map erstellen
+            if _, exists := current[key]; !exists {
+                current[key] = make(map[string]interface{})
+            }
+
+            // Typprüfung: Ist der aktuelle Schlüssel eine Map?
+            nested, ok := current[key].(map[string]interface{})
+            if !ok {
+                return fmt.Errorf("key '%s' is not a map", key)
+            }
+            current = nested
+        }
+    }
+
+    return nil
 }
 
 func UpdateKeyValue(filePath string, key string, value interface{}) error {

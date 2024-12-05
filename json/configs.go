@@ -59,3 +59,12 @@ type ServiceVersion struct {
 type VersionConfig struct {
 	Versions map[string]interface{} `json:"versions"`
 }
+
+type TemplatesConfig struct {
+	Templates	 map[string]TemplateConfig	`json:"templates"`
+}
+
+type TemplateConfig struct {
+	Name	 		 string	`json:"name"`
+	ServiceVersion	 string	`json:"serviceVersion"`
+}

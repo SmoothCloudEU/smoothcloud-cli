@@ -104,5 +104,11 @@ func Install() {
 		fmt.Printf("Error saving configuration to %s: %v\n", configPath, err)
 		return
 	}
+	templatesConfigPath := filepath.Join(selectedDir, "/storage", "templates.json")
+	err = json.SaveJSON(templatesConfigPath, json.TemplatesConfig{Templates: nil})
+	if err != nil {
+		fmt.Printf("Error saving configuration to %s: %v\n", configPath, err)
+		return
+	}
 	fmt.Printf("\nCloud has been successfully installed into \"%s\"!\n", selectedDir)
 }
