@@ -51,13 +51,8 @@ type GroupConfig struct {
 	Java		 	 	 string `json:"java"`
 }
 
-type ServiceVersionProxy struct {
-	VELOCITY   map[string]string `json:"VELOCITY"`
-	BUNGEECORD map[string]string `json:"BUNGEECORD"`
-}
-
 type ServiceVersion struct {
-	PROXY  ServiceVersionProxy  	`json:"PROXY"`
+	PROXY  map[string]VersionConfig  	`json:"PROXY"`
 	SERVER map[string]VersionConfig `json:"SERVER"`
 }
 

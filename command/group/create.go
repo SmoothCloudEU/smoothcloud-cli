@@ -115,14 +115,11 @@ func ExtractServiceVersions(config json.ServiceVersion) ([]string, []string) {
 			serviceVersions = append(serviceVersions, serviceVersion)
 		}
 	}
-	if config.PROXY.VELOCITY != nil {
-		for version := range config.PROXY.VELOCITY {
-			proxyVersions = append(proxyVersions, fmt.Sprintf("VELOCITY_%s", version))
+	for serverType, serverConfig := range config.PROXY {
+		for version := range serverConfig.Versions {
+			serviceVersion := fmt.Sprintf("%s_%s", strings.ToUpper(serverType), version)
+			proxyVersions = append(proxyVersions, serviceVersion)
 		}
 	}
-	if config.PROXY.BUNGEECORD != nil {
-		proxyVersions = append(proxyVersions, "BUNGEECORD_LATEST")
-	}
-
 	return serviceVersions, proxyVersions
 }
