@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 )
 
@@ -25,6 +26,7 @@ func SaveJSON(filePath string, data interface{}) error {
 }
 
 func LoadJSON(filePath string, result interface{}) error {
+	fmt.Println(filePath)
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("error while opening file: %w", err)
@@ -38,6 +40,36 @@ func LoadJSON(filePath string, result interface{}) error {
 	if err != nil {
 		return fmt.Errorf("error while parsing file: %w", err)
 	}
+	return nil
+}
+
+func LoadJSONFromURL(url string, result interface{}) error {
+	fmt.Println(url)
+	
+	// HTTP-GET-Anfrage ausführen
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("error while fetching URL: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Überprüfen, ob der HTTP-Statuscode erfolgreich ist
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("received non-OK HTTP status: %s", resp.Status)
+	}
+
+	// Inhalt der Antwort lesen
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error while reading response body: %w", err)
+	}
+
+	// JSON-Daten unmarshallen
+	err = json.Unmarshal(body, result)
+	if err != nil {
+		return fmt.Errorf("error while parsing JSON: %w", err)
+	}
+
 	return nil
 }
 

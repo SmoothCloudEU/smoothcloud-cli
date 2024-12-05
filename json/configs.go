@@ -40,7 +40,7 @@ type GroupConfig struct {
 	TemplateName	 	 string `json:"templateName"`
 	Static				 bool	`json:"static"`
 	Maintenance			 bool	`json:"maintenance"`
-	Permission			 string `json:"permission"`
+	Permission			 any	`json:"permission"`
 	MinMemory 	 	 	 int 	`json:"minMemory"`
 	MaxMemory 	 	 	 int 	`json:"maxMemory"`
 	MinOnlineServices	 int	`json:"minOnlineServices"`
@@ -49,4 +49,20 @@ type GroupConfig struct {
 	NewServiceProcent	 int 	`json:"newServiceProcent"`
 	ServiceVersion	 	 string `json:"serviceVersion"`
 	Java		 	 	 string `json:"java"`
+}
+
+type ServiceVersionProxy struct {
+	VELOCITY   map[string]string `json:"VELOCITY"`
+	BUNGEECORD map[string]string `json:"BUNGEECORD"`
+}
+
+type ServiceVersionServer struct {
+	PAPER struct {
+		Versions map[string]map[string]string `json:"versions"`
+	} `json:"PAPER"`
+}
+
+type ServiceVersion struct {
+	PROXY  ServiceVersionProxy  `json:"PROXY"`
+	SERVER ServiceVersionServer `json:"SERVER"`
 }

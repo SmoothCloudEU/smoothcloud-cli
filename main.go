@@ -7,12 +7,20 @@ import (
 	"github.com/spf13/cobra"
 
 	"smoothcloudcli/command"
+	"smoothcloudcli/command/group"
 )
 
 func main() {
 	var rootCommand = &cobra.Command{
 		Use:     "smoothcloud",
 		Aliases: []string{"sc"},
+	}
+	var createGroupCommand = &cobra.Command{
+		Use:   "creategroup",
+		Short: "Creates a group",
+		Run: func(cmd *cobra.Command, args []string) {
+			group.CreateGroup()
+		},
 	}
 	var infoCommand = &cobra.Command{
 		Use:   "info",
@@ -29,8 +37,7 @@ func main() {
 			command.Install()
 		},
 	}
-	rootCommand.AddCommand(infoCommand)
-	rootCommand.AddCommand(installCommand)
+	rootCommand.AddCommand(createGroupCommand, infoCommand, installCommand)
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

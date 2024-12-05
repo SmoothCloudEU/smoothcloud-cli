@@ -10,18 +10,29 @@ import (
 
 
 func BrowseDirectories(baseDir string) string {
-	currentDir := baseDir
+	// Hole den absoluten Pfad des Basisverzeichnisses
+	currentDir, err := filepath.Abs(baseDir)
+	if err != nil {
+		fmt.Printf("Error determining absolute path: %v\n", err)
+		return ""
+	}
+
 	for {
+		// Unterverzeichnisse holen
 		dirs, err := GetSubdirectories(currentDir)
 		if err != nil {
 			fmt.Printf("Error reading directories: %v\n", err)
 			return ""
 		}
+
+		// Navigationsoptionen hinzufügen
 		if currentDir != baseDir {
 			dirs = append([]string{".."}, dirs...)
 		}
 		dirs = append(dirs, "Select this directory")
 		dirs = append(dirs, "Create a directory")
+
+		// Auswahl anzeigen
 		prompt := promptui.Select{
 			Label: fmt.Sprintf("Current directory: %s\nNavigate or select:", currentDir),
 			Items: dirs,
@@ -31,29 +42,42 @@ func BrowseDirectories(baseDir string) string {
 			fmt.Printf("Error selecting directory: %v\n", err)
 			return ""
 		}
-		if result == "Select this directory" {
-			return currentDir
-		}
-		if result == "Create a directory" {
+
+		// Aktionen basierend auf Auswahl
+		switch result {
+		case "Select this directory":
+			absolutePath, err := filepath.Abs(currentDir)
+			if err != nil {
+				fmt.Printf("Error getting absolute path: %v\n", err)
+				return ""
+			}
+			return absolutePath
+
+		case "Create a directory":
 			prompt := promptui.Prompt{
-				Label: 	   "Name of the new directory",
+				Label:     "Name of the new directory",
 				Default:   "cloud/",
-				AllowEdit: false,
+				AllowEdit: true,
 				Validate:  validateNonEmpty,
 			}
-			result, err := prompt.Run()
+			dirName, err := prompt.Run()
 			if err != nil {
 				fmt.Printf("Error creating directory: %v\n", err)
 				return ""
 			}
-			os.MkdirAll(result, os.ModePerm)
-			return BrowseDirectories(result)
-		}
-		if result == ".." {
+			newDir := filepath.Join(currentDir, dirName)
+			if err := os.MkdirAll(newDir, os.ModePerm); err != nil {
+				fmt.Printf("Error creating directory %s: %v\n", newDir, err)
+				return ""
+			}
+			return BrowseDirectories(newDir)
+
+		case "..":
 			currentDir = filepath.Dir(currentDir)
-			continue
+
+		default:
+			currentDir = filepath.Join(currentDir, result)
 		}
-		currentDir = filepath.Join(currentDir, result)
 	}
 }
 

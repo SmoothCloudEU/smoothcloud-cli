@@ -22,6 +22,20 @@ func Input(question string, defaultValue string) string {
 	return result
 }
 
+func InputWithEmpty(question string, defaultValue string) string {
+	prompt := promptui.Prompt{
+		Label:     question,
+		Default:   defaultValue,
+		AllowEdit: false,
+	}
+	result, err := prompt.Run()
+	if err != nil {
+		fmt.Printf("Error reading input: %v\n", err)
+		return ""
+	}
+	return result
+}
+
 func InputWithSelect(question string, options []string) string {
 	prompt := promptui.Select{
 		Label: question,
