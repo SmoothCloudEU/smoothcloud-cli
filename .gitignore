@@ -26,3 +26,4 @@ go.work.sum
 
 # Testing
 cloud/
+test.json

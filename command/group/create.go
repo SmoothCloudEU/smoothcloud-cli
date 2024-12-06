@@ -76,15 +76,46 @@ func CreateGroup() {
 	groupConfig := json.GroupConfig{
 		Name: name,
 		TemplateName: func() string {
-			if templateName == "create" {
-				templateFolderPath := filepath.Join(config.WorkingDirectory, "templates", name)
-				os.MkdirAll(templateFolderPath, os.ModePerm)
-				templatesPath := filepath.Join(config.WorkingDirectory, "storage", "templates.json")
-				err = json.AddNestedKeyValue(templatesPath, "templates." + name, json.TemplateConfig{Name: name, ServiceVersion: serviceVersion})
-				return name
+		if templateName == "create" {
+			// Template-Verzeichnis erstellen
+			templateFolderPath := filepath.Join(config.WorkingDirectory, "templates", name)
+			if err := os.MkdirAll(templateFolderPath, os.ModePerm); err != nil {
+				fmt.Printf("Fehler beim Erstellen des Template-Verzeichnisses: %v\n", err)
+				return ""
 			}
-			return templateName
-		}(),
+
+			// Templates-JSON-Datei laden
+			templatesPath := filepath.Join(config.WorkingDirectory, "storage", "templates.json")
+			var templatesConfig json.TemplatesConfig
+			if err := json.LoadJSON(templatesPath, &templatesConfig); err != nil {
+				fmt.Printf("Fehler beim Laden der Templates-JSON: %v\n", err)
+				return ""
+			}
+
+			// Neues Template hinzufügen oder aktualisieren
+			newTemplate := json.TemplateConfig{Name: name, ServiceVersion: serviceVersion}
+			var err error
+			if len(templatesConfig.Templates) == 0 {
+				// `templates` ist leer, Schlüssel initialisieren
+				err = json.UpdateKeyValue(templatesPath, "templates."+name, newTemplate)
+			} else {
+				// Schlüssel hinzufügen
+				err = json.AddNestedKeyValue(templatesPath, "templates."+name, newTemplate)
+			}
+
+			// Fehlerbehandlung
+			if err != nil {
+				fmt.Printf("Fehler beim Hinzufügen oder Aktualisieren des Templates: %v\n", err)
+				return ""
+			}
+
+			return name
+		}
+
+		// Anderen Template-Namen zurückgeben
+		return templateName
+	}(),
+
 		StartPriority: startPriority,
 		Static: staticBool,
 		Maintenance: maintenanceBool,
