@@ -1,6 +1,6 @@
 # SmoothCloud CLI
 
-The control-panel of smoothcloud-controllers.
+Optional management command line interface to manage a running cloud system instance from anywhere and on any platform.
 
 ## Testing
 
